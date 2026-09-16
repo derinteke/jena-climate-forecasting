@@ -1,0 +1,34 @@
+# Data / Veri  -- 42 MB CSV, downloaded by src/data.py, never committed
+data/raw/*
+!data/raw/.gitkeep
+data/processed/
+
+# Virtual environment / Sanal ortam
+.venv/
+venv/
+.tmp-pip/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Model checkpoints and outputs / Model kontrol noktaları ve çıktılar
+checkpoints/
+*.pt
+*.pth
+
+# Reports: keep the figures, they are the story / Raporlar: grafikler kalsın
+reports/*.json
+
+# Editors / Editörler
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Smoke-test artefacts are throwaway / Duman testi çıktıları tek kullanımlık
+reports/figures/*_smoke.png
+reports/results_smoke.csv

@@ -456,7 +456,7 @@ yayımlanmış bir referansla karşılaştırıp doğrulayabiliyorum.
    would be the honest next step if extremes were what mattered.
 5. **Interpolation is still interpolation.** I exclude windows that touch invented hours, but the
    short gaps elsewhere are still filled linearly. With gaps this small (0.13 % of steps) I judged
-   that acceptable, and the flags are there if you disagree.
+   that acceptable.
 
 **TR —** Yukarıdakinden daha iddialı bir şey söylemeden önce düzeltmem gerekenler:
 
@@ -473,7 +473,7 @@ yayımlanmış bir referansla karşılaştırıp doğrulayabiliyorum.
    pinball/quantile kaybı ya da uçlara ağırlık veren açık bir amaç fonksiyonu olurdu.
 5. **İnterpolasyon nihayetinde interpolasyondur.** Uydurulmuş saatlere değen pencereleri eliyorum
    ama geri kalan kısa boşluklar hâlâ doğrusal dolduruluyor. Boşluklar bu kadar azken (adımların
-   %0.13'ü) bunu kabul edilebilir buldum; katılmıyorsan işaretler yerinde, elinin altında.
+   %0.13'ü) bunu kabul edilebilir buldum.
 
 ---
 

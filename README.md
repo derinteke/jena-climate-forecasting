@@ -12,16 +12,16 @@ rule *"the temperature in 24 hours will be the temperature right now"* is famous
 and a model that cannot beat it has learned nothing useful. So I compute that baseline **before**
 training anything, and every model is reported against it.
 
-**TR —** Jena İklim veri seti üzerinde (2009–2016, Almanya'da Jena yakınlarındaki bir istasyon,
+**TR —** Jena İklim veri setiyle (2009–2016; Almanya'da Jena yakınlarındaki bir istasyon,
 10 dakikada bir ölçüm, 14 değişken, ~420.000 satır) sıcaklık tahmin modelleri kurdum.
-Kendime koyduğum görev: **14 değişkenin son 120 saatine (5 gün) bakıp, o pencerenin bitiminden
-tam 24 saat sonraki sıcaklığı tahmin etmek.**
+Kendime koyduğum görev şu: **14 değişkenin son 120 saatine (5 gün) bakıp, o pencerenin
+bitiminden tam 24 saat sonraki sıcaklığı tahmin etmek.**
 
-Beş model eğittim — doğrusal referans, LSTM, GRU, 1D-CNN ve Transformer — ama bu deponun derdi
-modeller değil. Derdi **baseline**. Bu veri setinde *"24 saat sonraki sıcaklık, şu anki
-sıcaklıktır"* şeklindeki naif kuralı geçmek meşhur şekilde zordur ve bunu geçemeyen bir model
-işe yarar hiçbir şey öğrenmemiştir. Bu yüzden o baseline'ı hiçbir şey eğitmeden **önce**
-hesaplıyorum ve her modeli ona karşı raporluyorum.
+Beş model eğittim: doğrusal bir referans, LSTM, GRU, 1D-CNN ve Transformer. Ama bu deponun asıl
+meselesi modeller değil, **baseline**. Bu veri setinde *"24 saat sonraki sıcaklık, şu anki
+sıcaklığa eşittir"* diyen naif kuralı geçmek bilinen bir zorluktur; bunu geçemeyen bir model de
+işe yarar hiçbir şey öğrenmemiş demektir. O yüzden baseline'ı daha hiçbir şey eğitmeden **önce**
+hesaplıyor, her modeli ona göre raporluyorum.
 
 ---
 
@@ -31,9 +31,10 @@ hesaplıyorum ve her modeli ona karşı raporluyorum.
 interpolated hours), never touched until the end. All figures in degrees Celsius. `vs baseline`
 is the change in test MAE against persistence — negative is better.
 
-**TR —** Test seti 2015-05-27 → 2017-01-01 (interpole edilmiş saatlere değenler elendikten sonra
-13.667 pencere), sona kadar hiç dokunulmadı. Tüm değerler derece cinsinden. `vs baseline`, test
-MAE'nin persistence'a göre değişimi — negatif olan iyidir.
+**TR —** Test seti 2015-05-27 → 2017-01-01 arası (interpole edilmiş saatlere değen pencereler
+çıkarıldıktan sonra 13.667 pencere) ve sona gelene kadar ona hiç dokunmadım. Tüm değerler Celsius
+cinsinden. `vs baseline` sütunu, test MAE'sinin persistence'a göre ne kadar oynadığını gösteriyor;
+negatif olması iyiye işaret.
 
 | Model | val MAE | val RMSE | **test MAE** | test RMSE | vs baseline | beats baseline |
 |---|---:|---:|---:|---:|---:|:---:|
@@ -77,29 +78,32 @@ MAE'nin persistence'a göre değişimi — negatif olan iyidir.
 
 **TR —**
 
-1. **Baseline güçlü, tam da söylendiği gibi.** "Yarının sıcaklığı bugünküdür" kuralı sıfır
-   parametreyle **2.575 °C** test MAE alıyor. Kurulumumun doğruluğunu sınamak için: Chollet aynı
-   veri setinde aynı baseline için ~2.62 °C raporluyor — hatta yeterince yakın, hattıma güveniyorum.
-2. **Özyinelemeli modeller bunu geçiyor, ama mütevazı şekilde.** En iyi model GRU **2.345 °C**'ye
-   iniyor — **%8.9** iyileşme. Bu gerçek bir kazanım ve GRU, LSTM, CNN, Transformer genelinde
-   tutarlı; ama devrim değil: bunca makine yaklaşık çeyrek derece kazandırıyor.
-3. **Doğrusal model dürüst mahcubiyet.** Pencereyi düzleştirip zaman sırası kavramı olmayan
-   1.681 parametreye indirgemek **2.565 °C** veriyor — persistence'tan istatistiksel olarak
-   ayırt edilemez ve GRU'nun yalnızca 0.22 °C gerisinde. Derin modellerin burada öğrendiğinin
-   çoğu doğrusal bir eşlemeye de açık.
-4. **Transformer'ın ilk sonucu mimarinin değil benim hatamdı.** Ortak `lr=1e-3` ile en iyi epoch'u
-   *birinci* epoch'tu — sonrasında hiç iyileşmedi; bu bir ayar hatası, dikkat mekanizması hakkında
-   bir kanıt değil. `lr=3e-4`'e indirince 2.450'den **2.402 °C**'ye geldi. Hâlâ derin modellerin
-   sonuncusu, ama bunu söyleme hakkını ancak kontrol ettiğim için kazandım.
-5. **Climatology, persistence'tan çok daha kötü** (3.712'ye karşı 2.575 °C). Bu bana modellerin
-   *sadece* "mevsimleri öğrenmediğini" söylüyor — yalnızca ayı ve saati bilmek, şu anki sıcaklığı
-   bilmekten çok daha zayıf bir sinyal.
-6. **Öznitelik mühendisliği hepsini yendi.** Rüzgâr vektörü ve döngüsel zaman kodlamalarıyla
-   aynı GRU **2.260 °C**'ye (−%12.2) iniyor; bu sayfadaki hiçbir mimari tercihinin sağlamadığı
-   kadar büyük bir kazanç. Aşağıdaki kontrol deneylerine bak.
-7. **Dürüst çekince:** En iyi derin modelle bir doğrusal katman arasında ~0.2 °C var, her mimariyi
-   tek tohumla (seed) koştum ve aynı kodu yeniden koşmak skoru ~0.016 °C oynatıyor. GRU/LSTM/CNN
-   sıralamasının anlamlı olduğunu, birkaç tohumla tekrarlamadan iddia etmem.
+1. **Baseline güçlü, tam da anlatıldığı gibi.** "Yarının sıcaklığı bugünküyle aynıdır" kuralı tek
+   bir parametre bile kullanmadan **2.575 °C** test MAE veriyor. Kurulumun sağlamasını yapmak için
+   baktım: Chollet aynı veri setinde aynı baseline için ~2.62 °C veriyor. Bu kadar yakın çıkması,
+   pipeline'ı doğru kurduğuma beni ikna etti.
+2. **Özyinelemeli modeller baseline'ı geçiyor, ama pek de fazla değil.** En iyi model GRU
+   **2.345 °C**'ye iniyor, yani **%8.9** iyileşme. Bu gerçek bir kazanç ve GRU, LSTM, CNN,
+   Transformer arasında tutarlı; ama devrim de değil: onca uğraşın karşılığı topu topu çeyrek
+   derece civarı.
+3. **Asıl mahcup eden, doğrusal model.** Pencereyi düzleştirip zaman sırasından bihaber 1.681
+   parametreye indirgeyince **2.565 °C** çıkıyor; persistence'tan istatistiksel olarak ayırt
+   edilemiyor ve GRU'nun topu topu 0.22 °C gerisinde. Derin modellerin burada öğrendiğinin çoğuna
+   basit bir doğrusal eşleme de rahatça ulaşıyor.
+4. **Transformer'ın ilk sonucu mimarinin değil, benim suçumdu.** Ortak `lr=1e-3` ile en iyi
+   epoch'u daha ilk epoch oldu; sonrasında bir daha toparlamadı. Bu bir ayar hatası, dikkat
+   mekanizması hakkında bir şey söylemez. `lr=3e-4`'e çekince 2.450'den **2.402 °C**'ye indi. Yine
+   de derin modellerin sonuncusu, ama bunu ancak kontrol ettiğim için söyleyebiliyorum.
+5. **Climatology, persistence'tan çok daha kötü** (3.712'ye karşı 2.575 °C). Bu da bana modellerin
+   *sadece* mevsimi ezberlemediğini gösteriyor: yalnızca ayı ve saati bilmek, o anki sıcaklığı
+   bilmenin yanında çok daha zayıf bir sinyal.
+6. **Hepsinin önüne geçen şey öznitelik mühendisliği oldu.** Rüzgâr vektörü ve döngüsel zaman
+   kodlamalarıyla beslenen aynı GRU **2.260 °C**'ye (−%12.2) iniyor; bu sayfadaki hiçbir mimari
+   tercihinin getirmediği kadar büyük bir kazanç. Aşağıdaki kontrol deneylerine göz at.
+7. **Dürüst uyarı:** En iyi derin modelle düz bir doğrusal katman arasında topu topu ~0.2 °C var,
+   her mimariyi tek bir seed'le koştum ve aynı kodu tekrar koşmak skoru ~0.016 °C oynatabiliyor.
+   GRU/LSTM/CNN sıralamasının gerçekten anlamlı olduğunu, birkaç farklı seed'le tekrarlamadan
+   iddia edemem.
 
 ### Control experiments / Kontrol deneyleri
 
@@ -120,8 +124,8 @@ architecture) so only the *inputs* change:
    gap between the GRU and the Transformer, and more than anything else I tried. If I had an
    afternoon to spend on this task, I would spend it on features, not on layers.
 
-**TR —** Varsaymak yerine cevaplamak istediğim iki soru; ikisi de GRU (en iyi mimari) ile koşuldu,
-yani yalnızca *girdiler* değişiyor:
+**TR —** Varsayıp geçmek yerine yanıtını görmek istediğim iki soru vardı; ikisini de GRU (en iyi
+mimari) ile koştum, yani yalnızca *girdiler* değişiyor:
 
 | GRU girdi kümesi | öznitelik | test MAE | baseline'a göre |
 |---|---:|---:|---:|
@@ -129,13 +133,13 @@ yani yalnızca *girdiler* değişiyor:
 | 14 ham değişkenin tamamı | 14 | 2.345 °C | −%8.9 |
 | Yalnızca sıcaklık (tek değişkenli) | 1 | 2.517 °C | −%2.3 |
 
-1. **Ek değişkenler yerlerini hak ediyor.** Girdiyi yalnızca sıcaklığa indirmek 0.17 °C'ye mal
-   oluyor ve modeli persistence'ın kıl payı yanına düşürüyor. Basınç, nem ve rüzgâr yarın
-   hakkında gerçekten bilgi taşıyor.
-2. **Öznitelik mühendisliği, mimari seçimini yendi.** Rüzgâr yönünü `(Wx, Wy)` vektörü, saati
-   sin/cos çifti olarak kodlamak ~20 satır tuttu ve **0.085 °C** kazandırdı — GRU ile Transformer
-   arasındaki farktan da, denediğim başka her şeyden de fazla. Bu göreve bir öğleden sonra
-   ayırsaydım, onu katmanlara değil özniteliklere harcardım.
+1. **Ek değişkenler ekmeğini çıkarıyor.** Girdiyi yalnızca sıcaklığa indirmek 0.17 °C'ye mal
+   oluyor ve modeli persistence'ın kıl payı yanına kadar geriletiyor. Basınç, nem ve rüzgâr yarın
+   hakkında sahiden bilgi taşıyor.
+2. **Öznitelik mühendisliği, mimari seçiminin önüne geçti.** Rüzgâr yönünü `(Wx, Wy)` vektörü,
+   saati de sin/cos çifti olarak kodlamak yaklaşık 20 satır sürdü ve **0.085 °C** kazandırdı; bu,
+   GRU ile Transformer arasındaki farktan da, denediğim her şeyden de fazla. Bu göreve bir öğleden
+   sonra ayırsam, o vakti katmanlara değil özniteliklere harcardım.
 
 ### A note on reproducibility / Tekrarlanabilirlik notu
 
@@ -144,18 +148,18 @@ same code, same machine. cuDNN's convolution algorithm selection is not determin
 so a 0.016 °C wobble is just noise. That is smaller than the gap between GRU and LSTM (0.010 °C),
 which is exactly why I will not defend that ordering without multiple seeds.
 
-**TR —** CNN1D script koşusunda 2.383 °C, notebook koşusunda 2.367 °C aldı — aynı tohum, aynı kod,
-aynı makine. cuDNN'in konvolüsyon algoritma seçimi varsayılan olarak deterministik değil; yani
-0.016 °C'lik oynama sadece gürültü. Bu, GRU ile LSTM arasındaki farktan (0.010 °C) daha büyük ve
-o sıralamayı birden çok tohum olmadan neden savunmayacağımın tam sebebi bu.
+**TR —** CNN1D, script'te 2.383 °C, notebook'ta 2.367 °C çıktı; aynı seed, aynı kod, aynı makine.
+cuDNN konvolüsyon algoritmasını varsayılan olarak deterministik seçmiyor, dolayısıyla 0.016 °C'lik
+bu oynama sadece gürültü. Üstelik bu fark, GRU ile LSTM arasındaki farktan (0.010 °C) bile büyük;
+o sıralamayı neden birkaç seed olmadan savunmadığımın tam sebebi de bu.
 
 ![Model comparison](reports/figures/model_comparison_full.png)
 
 **EN —** The picture is the honest version of the table: five bars that all sit just barely
 below the red baseline line. That gap is the entire contribution of deep learning to this task.
 
-**TR —** Resim, tablonun dürüst hâli: beşi de kırmızı baseline çizgisinin kıl payı altında duran
-beş çubuk. O boşluk, derin öğrenmenin bu göreve yaptığı katkının tamamı.
+**TR —** Grafik, tablonun kandırmayan hâli: beşi de kırmızı baseline çizgisinin kıl payı altında
+kalan beş çubuk. O incecik boşluk, derin öğrenmenin bu göreve kattığının tamamı.
 
 ![GRU learning curves](reports/figures/history_GRU_full.png)
 
@@ -163,9 +167,10 @@ beş çubuk. O boşluk, derin öğrenmenin bu göreve yaptığı katkının tama
 validation set: training loss keeps falling happily while validation MAE bottoms out early and
 then climbs. Without early stopping I would have shipped a worse model and never known it.
 
-**TR —** En iyi modelin öğrenme eğrileri ve neden ayrı bir doğrulama seti tuttuğumun ders
-kitaplık örneği: eğitim kaybı keyifle düşmeye devam ederken doğrulama MAE'si erkenden dibe vurup
-tırmanıyor. Erken durdurma olmasa daha kötü bir modeli teslim eder ve bunu hiç öğrenemezdim.
+**TR —** En iyi modelin öğrenme eğrileri; ayrı bir doğrulama seti tutmanın neden şart olduğunun
+ders kitabı örneği. Eğitim kaybı gönül rahatlığıyla düşmeye devam ederken doğrulama MAE'si erkenden
+dibe vurup yeniden tırmanıyor. Erken durdurma olmasaydı daha kötü bir modeli teslim eder, farkına
+bile varmazdım.
 
 ![Predicted vs actual](reports/figures/predictions_full.png)
 
@@ -180,17 +185,17 @@ are visible that no summary table shows:
   flatter curve. My headline MAE is good precisely *because* the model refuses to commit to
   extremes, which is worth knowing before anyone uses this to plan for a heatwave.
 
-**TR —** Test setinden üç hafta ve depodaki en öğretici resim. Hiçbir özet tablonun göstermediği
-iki şey burada görünüyor:
+**TR —** Test setinden üç hafta; depodaki en öğretici grafik bu. Hiçbir özet tablonun
+göstermediği iki şey burada gözle görülüyor:
 
-- **Persistence (mavi) gözle görülür şekilde sağa kaymış.** Zaten tanımı gereği dünün eğrisinin
-  bugünün eksenine çizilmiş hâli — şekli tam tutturuyor, zamanlamayı bir gün ıskalıyor.
-- **Bütün modeller tepe noktalarını sistematik olarak düşük tahmin ediyor.** 5 Haziran ve
-  13 Haziran'a bak: gerçek sıcaklık 31 °C'ye çıkarken modeller 25 °C civarında duruyor. Bu,
-  ortalamaya kaçmadır ve MSE'yi küçültmenin tam olarak istediği şeydir — model emin olmadığında
-  en güvenli tahmin daha düz bir eğridir. Manşetteki MAE'm iyi, *çünkü* model uçlara bahse
-  girmiyor; bunu, biri bu modeli sıcak hava dalgasına hazırlanmak için kullanmadan önce bilmek
-  gerek.
+- **Persistence (mavi) belirgin biçimde sağa kaymış.** Tanımı gereği dünün eğrisinin bugünün
+  eksenine çizilmiş hâli; şekli tam tutturuyor ama zamanlamayı bir gün ıskalıyor.
+- **Modellerin hepsi tepe noktalarını sistematik olarak düşük tahmin ediyor.** 5 Haziran ve
+  13 Haziran'a bak: gerçek sıcaklık 31 °C'ye çıkarken modeller 25 °C dolayında kalıyor. Bu bir
+  ortalamaya kaçma ve MSE'yi küçültmenin zaten istediği şey; model emin olmadığında en güvenli
+  tahmin daha düz bir eğri oluyor. Öndeki MAE değerimin iyi olmasının sebebi de tam olarak bu:
+  model uçlara oynamıyor. Biri bu modeli sıcak hava dalgasına hazırlık için kullanmadan önce bunu
+  bilmesinde fayda var.
 
 ---
 
@@ -206,15 +211,15 @@ claimed in this README:
 | **Windowing** | I split **first**, then window each slice **separately**. | If you window first and split after, a validation window whose input starts before the boundary contains training timesteps. Small leak, real leak. |
 | **Metrics** | MAE and RMSE, always converted back to **degrees Celsius**. | A standardised MSE of 0.13 means nothing. "Off by 2.3 °C" is a claim I can check against reality. |
 
-**TR —** Üç garanti; bunlar README'de iddia edilmekle kalmıyor, `tests/test_pipeline.py`
-tarafından zorunlu kılınıyor:
+**TR —** Üç garanti var; bunlar README'de öylesine iddia edilmiyor, `tests/test_pipeline.py`
+onları zorunlu tutuyor:
 
 | | Ne yapıyorum | Neden |
 |---|---|---|
-| **Bölme** | Kronolojik, asla rastgele değil. Train en eski blok, test en yeni. | Rastgele bölme, modelin 2016'yı görüp 2013 üzerinden puanlanmasına yol açar — hem sızıntı hem de gerçekte var olmayan bir görev. |
-| **Ölçekleme** | mean/std **yalnızca train diliminden**, sonra val ve test'e uygulanıyor. | Tüm veri üzerinden hesaplamak, test bilgisini eğitime işler. |
-| **Pencereleme** | Önce **bölüyorum**, sonra her dilimi **ayrı ayrı** pencereliyorum. | Önce pencereleyip sonra bölersen, girdisi sınırdan önce başlayan bir validation penceresi eğitim adımlarını içerir. Küçük ama gerçek bir sızıntı. |
-| **Metrikler** | MAE ve RMSE, her zaman **derece cinsine** çevrilmiş. | 0.13'lük standartlaştırılmış MSE hiçbir şey ifade etmez. "2.3 °C şaşırıyor" gerçekle kıyaslayabileceğim bir iddia. |
+| **Bölme** | Kronolojik, asla rastgele değil. Train en eski blok, test en yeni. | Rastgele bölünce model 2016'yı görüp 2013 üzerinden puanlanabiliyor; hem sızıntı, hem de gerçekte hiç karşılaşılmayacak bir görev. |
+| **Ölçekleme** | mean/std **yalnızca train diliminden** hesaplanıp val ve test'e uygulanıyor. | Bunu tüm veri üzerinden yapmak, test bilgisini eğitime sızdırır. |
+| **Pencereleme** | Önce **bölüyorum**, sonra her dilimi **ayrı ayrı** pencereliyorum. | Önce pencereleyip sonra bölersen, girdisi sınırdan önce başlayan bir validation penceresi eğitim adımlarını da içine alır. Küçük ama gerçek bir sızıntı. |
+| **Metrikler** | MAE ve RMSE, hepsi **Celsius'a** geri çevrilmiş. | 0.13'lük standartlaştırılmış bir MSE hiçbir şey anlatmaz. "2.3 °C şaşırıyor" ise gerçekle kıyaslayabileceğim bir cümle. |
 
 ---
 
@@ -251,35 +256,35 @@ perfectly predictable by "same as now". Every number in this README is the harde
 You can turn the exclusion off with `build_datasets(exclude_interpolated=False)` and measure the
 difference yourself.
 
-**TR —** CSV'ye güvenmedim ve güvenilmeyi de hak etmiyor:
+**TR —** CSV'ye olduğu gibi güvenmedim; zaten güvenilmeyi de hak etmiyor:
 
 1. **`-9999.0` sentinel değerleri.** Rüzgâr sütunları, hücreyi boş bırakmak yerine "sensör
-   arızalandı" demek için `-9999.0` kullanıyor — `wv (m/s)` ve `max. wv (m/s)` genelinde
-   20 hücre. Bir tanesi bile sütun ortalamasını ve std'sini çok uzağa çeker, normalizasyonu
-   sessizce zehirler.
-2. **Tekrar eden ve eksik zaman damgaları.** 327 zaman damgası iki kez geçiyor — 01–02.07.2010
-   ve 20–21.03.2014 günleri çift kaydedilmiş — ve birkaç yüz 10-dakikalık adım hiç yok. Seri
-   kutudan çıktığı haliyle düzenli bir ızgarada **değil**; her model satırlar arasında sabit
-   zaman adımı varsaydığı için bu çok önemli.
-3. **Tam test setinin içinde duran 74 saatlik bir delik.** En çok önemsenmesi gereken buydu ve
-   bunu ancak boşlukların kaç tane olduğunu değil *nerede* olduğunu yazdırdığım için buldum.
-   544 eksik adımın bir bloğu **25–28 Ekim 2016** arasında uzanıyor — tam üç gün — ve Ekim 2016
-   benim test dilimimin içinde. Onu interpole etmek havayı geri getirmiyor; düz bir çizgi
-   uyduruyor ve düz bir çizgiyi tahmin etmek persistence baseline'ı için *çocuk oyuncağı*.
-   O saatler bu README'deki her skoru olduğundan iyi gösterirdi.
+   arızalandı" demek için `-9999.0` yazıyor; `wv (m/s)` ve `max. wv (m/s)` sütunlarında toplam
+   20 hücre. Bir tanesi bile sütunun ortalamasını ve std'sini uçuruyor, normalizasyonu sessiz
+   sedasız zehirliyor.
+2. **Tekrar eden ve eksik zaman damgaları.** 327 zaman damgası iki kez geçiyor (01–02.07.2010 ve
+   20–21.03.2014 günleri çift kaydedilmiş); üstüne birkaç yüz 10 dakikalık adım tamamen eksik.
+   Yani seri kutudan çıktığı hâliyle düzgün bir ızgarada **değil** ve her model satırlar arasında
+   sabit bir zaman adımı varsaydığından bu hiç de küçük bir mesele değil.
+3. **Tam test setinin ortasında duran 74 saatlik bir boşluk.** En çok canımı sıkan buydu ve onu
+   ancak boşlukların kaç tane değil *nerede* olduğunu yazdırdığım için fark ettim. 544 eksik adımın
+   bir bloğu **25–28 Ekim 2016** arasına düşüyor (tam üç gün) ve Ekim 2016 benim test dilimimin
+   içinde. Bu aralığı interpole etmek havayı geri getirmiyor, düpedüz düz bir çizgi uyduruyor; düz
+   bir çizgiyi tahmin etmek de persistence baseline'ı için *çocuk oyuncağı*. O saatler kalsaydı bu
+   README'deki her skoru olduğundan parlak gösterirdi.
 
-`src/data.py` üçünü de gideriyor: sentinel değerler NaN'e dönüyor, tekrarlar (ilki tutularak)
-atılıyor, seri eksiksiz bir 10 dakikalık ızgaraya yeniden indeksleniyor ki boşluklar açık NaN
-hâline gelsin ve her şey zamana göre interpole ediliyor. Ardından tam saat ölçümlerini alarak
-saatliğe seyreltiyorum — saatlik ortalama değil anlık ölçüm, çünkü hedef anlık bir ölçüm.
+`src/data.py` üçünü de temizliyor: sentinel değerler NaN oluyor, tekrarlar (ilki kalacak şekilde)
+atılıyor, seri eksiksiz bir 10 dakikalık ızgaraya yeniden indeksleniyor ki boşluklar açık birer NaN
+hâline gelsin, sonra her şey zamana göre interpole ediliyor. Ardından tam saatteki ölçümleri alarak
+saatliğe indiriyorum; saatlik ortalama değil anlık değer, çünkü hedef de anlık bir ölçüm.
 
-En kritiği: **interpole edilen her satır işaretli kalıyor** ve `WindowDataset`, işaretli bir saati
-*okuyan* ya da *tahmin eden* her pencereyi atıyor. Bu bana 13.884 test penceresinin 217'sine
-(%1.6) mal oluyor. Sonuç tam beklediğim gibi: uydurulmuş saatleri çıkarmak test setini biraz
-**zorlaştırıyor** (persistence 2.565'ten 2.575 °C'ye çıkıyor), çünkü doğrusal bir interpolasyon
-"şu anki değerle aynı" kuralıyla neredeyse kusursuz tahmin edilir. Bu README'deki her sayı, o
-daha zor ve dürüst olan sayı. `build_datasets(exclude_interpolated=False)` ile eleme kapatılıp
-fark kendin ölçülebilir.
+İşin en kritik yeri: **interpole edilen her satır işaretli kalıyor** ve `WindowDataset`, işaretli
+bir saati *okuyan* ya da *tahmin eden* her pencereyi eliyor. Bu bana 13.884 test penceresinin
+217'sine (%1.6) mal oluyor. Sonuç da tam tahmin ettiğim gibi: uydurulmuş saatleri çıkarınca test
+seti biraz **zorlaşıyor** (persistence 2.565'ten 2.575 °C'ye çıkıyor), çünkü doğrusal bir
+interpolasyonu "şu anki değerle aynı" kuralıyla tahmin etmek neredeyse kusursuz sonuç verir. Bu
+README'deki her sayı, o daha zor ve dürüst olan sayı. İstersen `build_datasets(exclude_interpolated=False)`
+ile elemeyi kapatıp farkı kendin ölçebilirsin.
 
 ---
 
@@ -295,15 +300,16 @@ fark kendin ölçülebilir.
   only. It knows July is warmer than January but nothing about today's weather, so it tells me
   how much of a model's skill is *just* "learning the seasons".
 
-**TR —** Hiçbir şey eğitilmeden önce hesaplanıyor ki sonradan modelleri kayıramayayım:
+**TR —** Hepsini daha hiçbir şey eğitmeden hesaplıyorum ki sonradan modellere kıyak geçmiş
+olmayayım:
 
-- **Persistence** — "24 saat sonraki sıcaklık, şu anki sıcaklıktır". Parametre yok, overfit
-  edecek bir şey yok. **Geçilmesi gereken sayı bu.**
-- **TrainMean** — her zaman eğitim ortalamasını tahmin et. En zayıf makul referans; bir model
-  bunu bile geçemiyorsa sorun mimaride değil hattın kendisindedir.
-- **Climatology** — yalnızca train'den öğrenilmiş (ay, saat) hücresinin ortalama sıcaklığı.
-  Temmuzun ocaktan sıcak olduğunu biliyor ama bugünkü havadan haberi yok; yani bir modelin
-  başarısının ne kadarının *sadece* "mevsimleri öğrenmek" olduğunu söylüyor.
+- **Persistence** — "24 saat sonraki sıcaklık, şu ankiyle aynıdır". Parametresi yok, overfit
+  edecek bir yanı yok. **Geçilmesi gereken sayı bu.**
+- **TrainMean** — her koşulda eğitim ortalamasını söyle. Akla gelebilecek en zayıf referans; bir
+  model bunu bile geçemiyorsa sorun mimaride değil, pipeline'ın kendisindedir.
+- **Climatology** — sadece train'den öğrenilen (ay, saat) hücresinin ortalama sıcaklığı. Temmuz'un
+  Ocak'tan sıcak olduğunu biliyor ama bugünkü havadan bihaber; yani bir modelin başarısının ne
+  kadarının *sırf* "mevsimi öğrenmekten" ibaret olduğunu ölçmeme yarıyor.
 
 ---
 
@@ -346,14 +352,14 @@ is not arbitrary and it is the part most likely to trip you up:
 - On Windows, **TensorFlow dropped native GPU support after 2.10**, which is a large part of why
   I chose PyTorch here rather than Keras.
 
-**TR —** Bu proje **Python 3.10** ve PyTorch'un **CUDA 12.6** derlemesiyle koşuyor. Bu tercih
-keyfi değil ve seni en çok tökezletecek kısım da burası:
+**TR —** Proje **Python 3.10** ve PyTorch'un **CUDA 12.6** derlemesiyle çalışıyor. Bu tercih
+keyfî değil, muhtemelen seni en çok uğraştıracak kısım da burası:
 
-- GPU'm bir **GTX 1050 Ti**, yani Pascal (`sm_61`). PyTorch'un yeni `cu128` wheel'leri artık
-  Pascal için derlenmiyor ve 570+ sürücü istiyor. **cu126** wheel'leri `sm_50`–`sm_90` arasını
-  kapsıyor ve 525+ sürücüyle çalışıyor; bu yüzden onu kuruyorum.
-- Windows'ta **TensorFlow, 2.10'dan sonra native GPU desteğini bıraktı**; burada Keras yerine
-  PyTorch'u seçmemin büyük sebebi bu.
+- GPU'm bir **GTX 1050 Ti**, yani Pascal mimarisi (`sm_61`). PyTorch'un yeni `cu128` wheel'leri
+  artık Pascal için derlenmiyor ve 570+ sürücü istiyor. **cu126** wheel'leri ise `sm_50`–`sm_90`
+  aralığını kapsıyor ve 525+ sürücüyle çalışıyor; o yüzden bunu kuruyorum.
+- Windows tarafında **TensorFlow 2.10'dan sonra yerel GPU desteğini bıraktı**; burada Keras yerine
+  PyTorch'a geçmemin başlıca sebebi de bu.
 
 ```bash
 py -3.10 -m venv .venv
@@ -366,9 +372,9 @@ pip install -r requirements.txt
 **EN —** CPU-only machine? Drop the `--index-url` and just `pip install torch`. Everything still
 runs, only slower — `src/train.py` falls back to CPU automatically and says so.
 
-**TR —** Yalnızca CPU olan bir makine mi? `--index-url`'ü at, düz `pip install torch` yeter.
-Her şey yine çalışır, sadece yavaş — `src/train.py` otomatik olarak CPU'ya düşüyor ve bunu
-söylüyor.
+**TR —** Makinende sadece CPU mu var? `--index-url`'ü çıkar, düz `pip install torch` yeterli.
+Her şey yine çalışır, sadece daha yavaş; `src/train.py` otomatik olarak CPU'ya düşüyor ve bunu
+ekrana da yazıyor.
 
 ---
 
@@ -396,9 +402,10 @@ jupyter lab notebooks/jena_climate_end_to_end.ipynb
 download step. `--smoke` is the habit I keep: a tiny end-to-end run on a slice of the data with
 2 epochs, which catches shape errors and broken plumbing in seconds instead of twenty minutes in.
 
-**TR —** Veri seti ilk kullanımda kendini indiriyor (`src/data.py`), dolayısıyla elle indirme
-adımı yok. `--smoke` sürdürdüğüm alışkanlık: verinin bir diliminde 2 epoch'luk minik bir uçtan
-uca koşu; boyut hatalarını ve bozuk tesisatı yirmi dakika sonra değil saniyeler içinde yakalıyor.
+**TR —** Veri seti ilk çalıştırmada kendini indiriyor (`src/data.py`), yani elle indirme derdi
+yok. `--smoke` ise vazgeçmediğim bir alışkanlık: verinin küçük bir diliminde 2 epoch'luk minik,
+uçtan uca bir koşu. Boyut hatalarını ve bozuk boruları yirmi dakika sonra değil, saniyeler içinde
+yakalatıyor.
 
 ---
 
@@ -413,14 +420,14 @@ The model never sees anything after `t`, and what it predicts is a full day beyo
 observation. This is the same framing Chollet uses in *Deep Learning with Python*, which lets me
 sanity-check my numbers against a published reference.
 
-**TR —** Bir eğitim örneği şu:
+**TR —** Tek bir eğitim örneği şöyle:
 
 - **girdi**: `t-119 … t` saatleri, 14 değişkenin tamamı, standartlaştırılmış → boyut `(120, 14)`
-- **hedef**: `t+24` saatindeki sıcaklık, tek bir sayı
+- **hedef**: `t+24` saatindeki sıcaklık; tek bir sayı
 
-Model `t`'den sonrasını asla görmüyor ve tahmin ettiği şey son gözleminden tam bir gün ötede.
-Bu, Chollet'in *Python ile Derin Öğrenme* kitabındaki kurgunun aynısı; böylece sayılarımı
-yayımlanmış bir referansla karşılaştırıp kontrol edebiliyorum.
+Model `t`'den sonrasını hiç görmüyor ve tahmin ettiği an, son gözlemin tam bir gün ötesinde. Bu,
+Chollet'in *Python ile Derin Öğrenme* kitabındaki kurgunun birebir aynısı; sayede sayılarımı
+yayımlanmış bir referansla karşılaştırıp doğrulayabiliyorum.
 
 ---
 
@@ -451,22 +458,22 @@ yayımlanmış bir referansla karşılaştırıp kontrol edebiliyorum.
    short gaps elsewhere are still filled linearly. With gaps this small (0.13 % of steps) I judged
    that acceptable, and the flags are there if you disagree.
 
-**TR —** Yukarıdakinden daha güçlü bir iddiada bulunmadan önce düzeltmem gerekenler:
+**TR —** Yukarıdakinden daha iddialı bir şey söylemeden önce düzeltmem gerekenler:
 
-1. **Mimari başına tek tohum (seed).** GRU/LSTM/CNN sıralaması ~0.04 °C'lik bir aralığın içinde.
-   O sıralamayı savunmak için her birinden 5–10 tohum lazım; şu an yalnızca "derin modeller
-   persistence'ı kabaca %8–9 geçiyor" iddiasını savunuyorum.
-2. **Hiperparametre araması yok.** Gizli katman boyutları, derinlikler ve dropout makul
-   varsayılanlar, ayarlanmış değerler değil. Transformer'daki öğrenme oranı kontrolü bunun ne
-   kadar fark edebileceğini gösteriyor.
-3. **Tek ufuk.** Buradaki her şey 24 saat ileri için. Persistence hızla bozulduğundan, daha uzun
-   ufuklarda fark açılır; daha kısa ufuklarda ise kapanır.
-4. **Tepe noktaları düşük tahmin ediliyor.** Tahmin grafiğinin gösterdiği gibi, MSE ile eğitim
-   modelleri düz ve güvenli eğrilere itiyor. Uçlar önemli olsaydı, dürüst bir sonraki adım
+1. **Mimari başına tek seed.** GRU/LSTM/CNN sıralaması ~0.04 °C'lik bir aralığa sığıyor. Bu
+   sıralamayı savunmak için her birinden 5–10 seed gerekir; şimdilik yalnızca "derin modeller
+   persistence'ı kabaca %8–9 geçiyor" diyebiliyorum.
+2. **Hiperparametre araması yok.** Gizli katman boyutları, derinlik ve dropout makul
+   varsayılanlar, ayarlanmış değerler değil. Transformer'daki öğrenme oranı denemesi bunun ne
+   kadar fark yaratabildiğini gösteriyor.
+3. **Tek bir ufuk.** Buradaki her şey 24 saat ileri için. Persistence hızla bozulduğu için fark
+   daha uzun ufuklarda açılır, daha kısa ufuklarda kapanır.
+4. **Tepe noktaları düşük tahmin ediliyor.** Tahmin grafiğinde görüldüğü gibi, MSE ile eğitim
+   modelleri düz ve temkinli eğrilere itiyor. Uçlar önemli olsaydı dürüst bir sonraki adım,
    pinball/quantile kaybı ya da uçlara ağırlık veren açık bir amaç fonksiyonu olurdu.
-5. **İnterpolasyon yine de interpolasyon.** Uydurulmuş saatlere değen pencereleri eliyorum ama
-   diğer kısa boşluklar hâlâ doğrusal dolduruluyor. Boşluklar bu kadar küçükken (adımların
-   %0.13'ü) bunu kabul edilebilir buldum; katılmıyorsan işaretler yerinde duruyor.
+5. **İnterpolasyon nihayetinde interpolasyondur.** Uydurulmuş saatlere değen pencereleri eliyorum
+   ama geri kalan kısa boşluklar hâlâ doğrusal dolduruluyor. Boşluklar bu kadar azken (adımların
+   %0.13'ü) bunu kabul edilebilir buldum; katılmıyorsan işaretler yerinde, elinin altında.
 
 ---
 
